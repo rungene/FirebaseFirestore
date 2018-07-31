@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">FirebaseFirestore</string>
+    <string name="button_text">Save</string>
+</resources>
