@@ -2,4 +2,5 @@
     <string name="app_name">FirebaseFirestore</string>
     <string name="button_text">Save</string>
     <string name="load_note">Load</string>
+    <string name="update_string">Update Description</string>
 </resources>
