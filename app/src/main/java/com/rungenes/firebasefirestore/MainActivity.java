@@ -18,9 +18,6 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
@@ -66,9 +63,11 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 if (documentSnapshot.exists()){
-                    String title = documentSnapshot.getString(KEY_TITLE);
-                    String description = documentSnapshot.getString(KEY_DESCRIPTION);
-                    String number = documentSnapshot.getString(KEY_NUMBER);
+                    Note note = documentSnapshot.toObject(Note.class);
+
+                    String title = note.getTitle();
+                    String description = note.getDescription();
+                    String number = note.getNumber();
 
                     textViewData.setText("Title: "+title+"\n"+ "Description: "+description+"\n"+"Number "+number);
 
@@ -91,10 +90,12 @@ public class MainActivity extends AppCompatActivity {
         String number = editTextNumber.getText().toString();
         editTextNumber.setText("");
 
-        Map<String, Object> note = new HashMap<>();
+   /*     Map<String, Object> note = new HashMap<>();
         note.put(KEY_TITLE, title);
         note.put(KEY_DESCRIPTION, description);
-        note.put(KEY_NUMBER,number);
+        note.put(KEY_NUMBER,number);*/
+
+   Note note = new Note(title,description,number);
 
         noteRef.set(note)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -146,9 +147,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 if (documentSnapshot.exists()){
-                    String title = documentSnapshot.getString(KEY_TITLE);
-                    String description = documentSnapshot.getString(KEY_DESCRIPTION);
-                    String number = documentSnapshot.getString(KEY_NUMBER);
+                   Note note = documentSnapshot.toObject(Note.class);
+
+                   String title = note.getTitle();
+                   String description = note.getDescription();
+                   String number = note.getNumber();
 
                     textViewData.setText("Title: "+title+"\n"+ "Description: "+description+"\n"+"Number "+number);
 
