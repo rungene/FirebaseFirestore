@@ -13,7 +13,9 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,10 +47,49 @@ public class MainActivity extends AppCompatActivity {
         textViewData = findViewById(R.id.text_view_data);
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        noteRef.addSnapshotListener(this,new EventListener<DocumentSnapshot>() {
+            @Override
+            public void onEvent(DocumentSnapshot documentSnapshot, FirebaseFirestoreException e) {
+
+                if (e!=null){
+
+                    String errorLoading = e.getMessage().toString();
+                    Toast.makeText(MainActivity.this, "Error while loading"+errorLoading, Toast.LENGTH_SHORT).show();
+
+                    Log.d(TAG, e.toString());
+                    return;
+                }
+
+                if (documentSnapshot.exists()){
+                    String title = documentSnapshot.getString(KEY_TITLE);
+                    String description = documentSnapshot.getString(KEY_DESCRIPTION);
+                    String number = documentSnapshot.getString(KEY_NUMBER);
+
+                    textViewData.setText("Title: "+title+"\n"+ "Description: "+description+"\n"+"Number "+number);
+
+
+
+
+                }
+
+            }
+        });
+
+
+    }
+
     public void saveNote(View v) {
         String title = editTextTitle.getText().toString();
+        editTextTitle.setText("");
+
         String description = editTextDescription.getText().toString();
+        editTextDescription.setText("");
         String number = editTextNumber.getText().toString();
+        editTextNumber.setText("");
 
         Map<String, Object> note = new HashMap<>();
         note.put(KEY_TITLE, title);
