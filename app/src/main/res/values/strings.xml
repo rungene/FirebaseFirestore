@@ -3,4 +3,6 @@
     <string name="button_text">Save</string>
     <string name="load_note">Load</string>
     <string name="update_string">Update Description</string>
+    <string name="delete_description">Delete Description</string>
+    <string name="delete_note">Delete Note</string>
 </resources>
