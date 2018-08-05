@@ -1,22 +1,20 @@
 package com.rungenes.firebasefirestore;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QuerySnapshot;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -27,12 +25,15 @@ public class MainActivity extends AppCompatActivity {
 
     private EditText editTextTitle;
     private EditText editTextDescription;
-    private EditText editTextNumber;
+    private EditText editTextPriority;
     private TextView textViewData;
 
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private CollectionReference notebookRef = db.collection("Notebook");
 
-    private DocumentReference noteRef = db.collection("Notebook").document("My First Note");
+    private DocumentReference noteRef = db.document("Notebook/My First Note");
+
+    //private DocumentReference noteRef = db.collection("Notebook").document("My First Note");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
         editTextTitle = findViewById(R.id.edit_text_title);
         editTextDescription = findViewById(R.id.edit_text_description);
-        editTextNumber = findViewById(R.id.edit_text_number);
+        editTextPriority = findViewById(R.id.edit_text_priority);
         textViewData = findViewById(R.id.text_view_data);
     }
 
@@ -49,130 +50,96 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        noteRef.addSnapshotListener(this,new EventListener<DocumentSnapshot>() {
+        notebookRef.addSnapshotListener(this, new EventListener<QuerySnapshot>() {
             @Override
-            public void onEvent(DocumentSnapshot documentSnapshot, FirebaseFirestoreException e) {
+            public void onEvent(QuerySnapshot documentSnapshots, FirebaseFirestoreException e) {
 
                 if (e!=null){
-
-                    String errorLoading = e.getMessage().toString();
-                    Toast.makeText(MainActivity.this, "Error while loading"+errorLoading, Toast.LENGTH_SHORT).show();
-
-                    Log.d(TAG, e.toString());
                     return;
                 }
+                String data= "";
 
-                if (documentSnapshot.exists()){
+                for (DocumentSnapshot documentSnapshot:documentSnapshots){
+
                     Note note = documentSnapshot.toObject(Note.class);
+
+                    note.setDocumentId(documentSnapshot.getId());
+
+                    String documentId = note.getDocumentId();
 
                     String title = note.getTitle();
                     String description = note.getDescription();
-                    String number = note.getNumber();
+                    int number = note.getPriority();
 
-                    textViewData.setText("Title: "+title+"\n"+ "Description: "+description+"\n"+"Number "+number);
 
-                }else {
-                    textViewData.setText("");
+                    data += "ID"+documentId+
+                            "\nTitle: "+title+ "\nDescription: "+description+ "\nPriority; "+number+ "\n\n";
+
                 }
+                textViewData.setText(data);
 
             }
         });
 
-
     }
 
-    public void saveNote(View v) {
+    public void addNote(View v) {
         String title = editTextTitle.getText().toString();
-        editTextTitle.setText("");
+       // editTextTitle.setText("");
 
         String description = editTextDescription.getText().toString();
-        editTextDescription.setText("");
-        String number = editTextNumber.getText().toString();
-        editTextNumber.setText("");
+       // editTextDescription.setText("");
+
+        if (editTextPriority.length()==0){
+
+            editTextPriority.setText("0");
+        }
+
+        int priority = Integer.parseInt(editTextPriority.getText().toString());
+        //editTextNumber.setText("");
 
    /*     Map<String, Object> note = new HashMap<>();
         note.put(KEY_TITLE, title);
         note.put(KEY_DESCRIPTION, description);
         note.put(KEY_NUMBER,number);*/
 
-   Note note = new Note(title,description,number);
+   Note note = new Note(title,description,priority);
 
-        noteRef.set(note)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Toast.makeText(MainActivity.this, "Note saved", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Toast.makeText(MainActivity.this, "Error!", Toast.LENGTH_SHORT).show();
-                        Log.d(TAG, e.toString());
-                    }
-                });
-    }
-
-    public  void updateDescription(View view){
-
-        String description = editTextDescription.getText().toString();
-
-     /*   Map<String,Object> note = new HashMap<>();
-        note.put(KEY_DESCRIPTION,description);*/
-
-      //  noteRef.set(note, SetOptions.merge());
-        noteRef.update(KEY_DESCRIPTION,description);
-    }
-
-    public void deleteDescription(View v){
-        String description = editTextDescription.getText().toString();
-
-      /*  Map<String,Object> note = new HashMap<>();
-        note.put(KEY_DESCRIPTION, FieldValue.delete());
-
-        noteRef.update(note);*/
-
-        noteRef.update(KEY_DESCRIPTION,FieldValue.delete());
-    }
-
-    public void deleteNote(View view){
-
-        noteRef.delete();
+notebookRef.add(note);
     }
 
 
-    public void loadNote(View v){
-
-        noteRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+    public void loadNotes(View v){
+notebookRef.whereGreaterThanOrEqualTo("priority",1)
+        .orderBy("priority", Query.Direction.DESCENDING)
+        .get()
+        .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
             @Override
-            public void onSuccess(DocumentSnapshot documentSnapshot) {
-                if (documentSnapshot.exists()){
-                   Note note = documentSnapshot.toObject(Note.class);
+            public void onSuccess(QuerySnapshot documentSnapshots) {
 
-                   String title = note.getTitle();
-                   String description = note.getDescription();
-                   String number = note.getNumber();
+                String data = "";
 
-                    textViewData.setText("Title: "+title+"\n"+ "Description: "+description+"\n"+"Number "+number);
+                for (DocumentSnapshot documentSnapshot: documentSnapshots){
 
+                    Note note = documentSnapshot.toObject(Note.class);
 
+                    note.setDocumentId(documentSnapshot.getId());
 
+                    String documentId = note.getDocumentId();
+                    String title = note.getTitle();
+                    String description = note.getDescription();
 
-                }else {
-                    Toast.makeText(MainActivity.this, "Document dose not exist", Toast.LENGTH_SHORT).show();
+                    int priority = note.getPriority();
+
+                    data += "ID"+documentId+
+                            "\nTitle: "+title+ "\nDescription: "+description+ "\nPriority; "+priority+ "\n\n";
+
                 }
+                textViewData.setText(data);
 
             }
-        })
-          .addOnFailureListener(new OnFailureListener() {
-              @Override
-              public void onFailure(@NonNull Exception e) {
+        });
 
-                  Toast.makeText(MainActivity.this, "Error", Toast.LENGTH_SHORT).show();
 
-                  Log.d(TAG, "error: "+e.toString());
-
-              }
-          });
     }
 }
