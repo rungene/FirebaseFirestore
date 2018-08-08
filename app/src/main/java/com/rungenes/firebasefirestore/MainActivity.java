@@ -1,11 +1,14 @@
 package com.rungenes.firebasefirestore;
 
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
@@ -112,6 +115,7 @@ notebookRef.add(note);
     public void loadNotes(View v){
 notebookRef.whereGreaterThanOrEqualTo("priority",1)
         .orderBy("priority", Query.Direction.DESCENDING)
+        .whereEqualTo("title","Aa")
         .get()
         .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
             @Override
@@ -138,7 +142,13 @@ notebookRef.whereGreaterThanOrEqualTo("priority",1)
                 textViewData.setText(data);
 
             }
-        });
+        })
+.addOnFailureListener(new OnFailureListener() {
+    @Override
+    public void onFailure(@NonNull Exception e) {
+        Log.d(TAG,e.toString());
+    }
+});
 
 
     }
