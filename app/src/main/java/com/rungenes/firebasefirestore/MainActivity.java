@@ -1,23 +1,23 @@
 package com.rungenes.firebasefirestore;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -57,12 +57,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onEvent(QuerySnapshot documentSnapshots, FirebaseFirestoreException e) {
 
-                if (e!=null){
+                if (e != null) {
                     return;
                 }
-                String data= "";
+                String data = "";
 
-                for (DocumentSnapshot documentSnapshot:documentSnapshots){
+                for (DocumentSnapshot documentSnapshot : documentSnapshots) {
 
                     Note note = documentSnapshot.toObject(Note.class);
 
@@ -75,8 +75,8 @@ public class MainActivity extends AppCompatActivity {
                     int number = note.getPriority();
 
 
-                    data += "ID"+documentId+
-                            "\nTitle: "+title+ "\nDescription: "+description+ "\nPriority; "+number+ "\n\n";
+                    data += "ID" + documentId +
+                            "\nTitle: " + title + "\nDescription: " + description + "\nPriority; " + number + "\n\n";
 
                 }
                 textViewData.setText(data);
@@ -88,12 +88,12 @@ public class MainActivity extends AppCompatActivity {
 
     public void addNote(View v) {
         String title = editTextTitle.getText().toString();
-       // editTextTitle.setText("");
+        // editTextTitle.setText("");
 
         String description = editTextDescription.getText().toString();
-       // editTextDescription.setText("");
+        // editTextDescription.setText("");
 
-        if (editTextPriority.length()==0){
+        if (editTextPriority.length() == 0) {
 
             editTextPriority.setText("0");
         }
@@ -106,50 +106,51 @@ public class MainActivity extends AppCompatActivity {
         note.put(KEY_DESCRIPTION, description);
         note.put(KEY_NUMBER,number);*/
 
-   Note note = new Note(title,description,priority);
+        Note note = new Note(title, description, priority);
 
-notebookRef.add(note);
+        notebookRef.add(note);
     }
 
 
-    public void loadNotes(View v){
-notebookRef.whereGreaterThanOrEqualTo("priority",1)
-        .orderBy("priority", Query.Direction.DESCENDING)
-        .whereEqualTo("title","Aa")
-        .get()
-        .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-            @Override
-            public void onSuccess(QuerySnapshot documentSnapshots) {
+    public void loadNotes(View v) {
+        Task task1 = notebookRef.whereLessThan("priority", 2)
+                .orderBy("priority")
+                .get();
 
+        Task task2 = notebookRef.whereGreaterThan("priority", 2)
+                .orderBy("priority")
+                .get();
+
+        Task<List<QuerySnapshot>> allTasks = Tasks.whenAllSuccess(task1, task2);
+
+        allTasks.addOnSuccessListener(new OnSuccessListener<List<QuerySnapshot>>() {
+            @Override
+            public void onSuccess(List<QuerySnapshot> querySnapshots) {
                 String data = "";
 
-                for (DocumentSnapshot documentSnapshot: documentSnapshots){
+                for (QuerySnapshot documentSnapshots : querySnapshots) {
 
-                    Note note = documentSnapshot.toObject(Note.class);
+                    for (DocumentSnapshot documentSnapshot : documentSnapshots) {
 
-                    note.setDocumentId(documentSnapshot.getId());
+                        Note note = documentSnapshot.toObject(Note.class);
 
-                    String documentId = note.getDocumentId();
-                    String title = note.getTitle();
-                    String description = note.getDescription();
+                        note.setDocumentId(documentSnapshot.getId());
 
-                    int priority = note.getPriority();
+                        String documentId = note.getDocumentId();
+                        String title = note.getTitle();
+                        String description = note.getDescription();
 
-                    data += "ID"+documentId+
-                            "\nTitle: "+title+ "\nDescription: "+description+ "\nPriority; "+priority+ "\n\n";
+                        int priority = note.getPriority();
 
+                        data += "ID" + documentId +
+                                "\nTitle: " + title + "\nDescription: " + description + "\nPriority; " + priority + "\n\n";
+
+                    }
                 }
                 textViewData.setText(data);
 
             }
-        })
-.addOnFailureListener(new OnFailureListener() {
-    @Override
-    public void onFailure(@NonNull Exception e) {
-        Log.d(TAG,e.toString());
-    }
-});
-
+        });
 
     }
 }
