@@ -8,8 +8,11 @@ import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -77,6 +80,51 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }*/
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        notebookRef.addSnapshotListener(this,new EventListener<QuerySnapshot>() {
+            @Override
+            public void onEvent(QuerySnapshot documentSnapshots, FirebaseFirestoreException e) {
+
+                if(e != null){
+
+                    return;
+                }
+
+                for (DocumentChange dc : documentSnapshots.getDocumentChanges()){
+
+                    DocumentSnapshot documentSnapshot = dc.getDocument();
+
+                    String id = documentSnapshot.getId();
+
+                    int oldIndex = dc.getOldIndex();
+                    int newIndex = dc.getNewIndex();
+
+                    switch (dc.getType()){
+                        case ADDED:
+                            textViewData.append("\nAdded "+id+ "\nOld idex"+ oldIndex+
+                            "\nNew index "+newIndex
+                            );
+                            break;
+                        case MODIFIED:
+                            textViewData.append("\nModified "+id+ "\nOld idex"+ oldIndex+
+                                    "\nNew index "+newIndex
+                            );
+                            break;
+                        case REMOVED:
+                            textViewData.append("\nRemoved "+id+ "\nOld idex"+ oldIndex+
+                                    "\nNew index "+newIndex
+                            );
+                            break;
+                    }
+
+                }
+            }
+        });
+    }
 
     public void addNote(View v) {
         String title = editTextTitle.getText().toString();
